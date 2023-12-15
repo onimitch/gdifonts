@@ -51,6 +51,47 @@ local function CreateFontData(settings)
     return data;
 end
 
+local function CreateRegionData(settings)
+    local data = {};
+    local region_count = 0;
+    local regions = nil;
+    local ranges = {};
+
+    if(settings.regions ~= nil and type(settings.regions) == 'table') then
+        region_count = #settings.regions;
+
+        regions = ffi.new('GdiRegion_t[?]', region_count);
+        local i = 0;
+        for k, r in pairs(settings.regions) do
+            -- Parse font color from key
+            local colors = k:split(',');
+            regions[i].FontColor = d3d.D3DCOLOR_ARGB(255, colors[1], colors[2], colors[3]);
+            -- For now we just use same outline color
+            regions[i].OutlineColor = settings.outline_color;
+
+            local ranges_arr = ffi.new('GdiCharRange_t[?]', #r);
+            for j, range in ipairs(r) do
+                ranges_arr[j-1] = { range.start_u-1, range.length_u };
+            end
+            regions[i].Ranges = ranges_arr;
+            regions[i].RangesLength = #r;
+
+            i = i + 1;
+
+            -- Make sure we keep the ranges data referenced in lua so it's collected by GC
+            table.insert(ranges, ranges_arr);
+        end
+    end
+
+    -- Make sure we keep the ranges referenced in lua so it's collected by GC
+    data.ranges = ranges;
+
+    data.regions = regions;
+    data.region_count = region_count;
+
+    return data
+end
+
 local function Error(text)
     local stripped = string.gsub(text, '$H', ''):gsub('$R', '');
     LogManager:Log(1, 'GdiFonts', stripped);
@@ -91,7 +132,12 @@ function object:get_texture()
         if (self.settings.text == '') then
             return;
         end
-        local tx = self.renderer.CreateTexture(self.interface, CreateFontData(self.settings));
+        local font_data = CreateFontData(self.settings);
+        local region_data = CreateRegionData(self.settings);
+        font_data.Regions = region_data.regions;
+        font_data.RegionsLength = region_data.region_count;
+        
+        local tx = self.renderer.CreateTexture(self.interface, font_data);
         if (tx.Texture == nil) or (tx.Width == 0) or (tx.Height == 0) then
             return;
         else
@@ -295,6 +341,11 @@ function object:get_text_size()
         return 0, 0;
     end
     return (self.rect.right - self.rect.left), (self.rect.bottom - self.rect.top);
+end
+
+function object:set_regions(regions)
+    self.is_dirty = true;
+    self.settings.regions = regions;
 end
 
 return object;
