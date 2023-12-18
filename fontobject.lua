@@ -53,13 +53,16 @@ end
 
 local function CreateRegionData(settings)
     local data = {};
-    local region_count = 0;
     local regions = nil;
     local ranges = {};
 
+    local region_count = 0;
     if(settings.regions ~= nil and type(settings.regions) == 'table') then
-        region_count = #settings.regions;
+        -- Careful, table.length is important here because # won't work (regions is not an array)
+        region_count = table.length(settings.regions);
+    end
 
+    if region_count > 0 then
         regions = ffi.new('GdiRegion_t[?]', region_count);
         local i = 0;
         for k, r in pairs(settings.regions) do
@@ -136,7 +139,7 @@ function object:get_texture()
         local region_data = CreateRegionData(self.settings);
         font_data.Regions = region_data.regions;
         font_data.RegionsLength = region_data.region_count;
-        
+
         local tx = self.renderer.CreateTexture(self.interface, font_data);
         if (tx.Texture == nil) or (tx.Width == 0) or (tx.Height == 0) then
             return;
