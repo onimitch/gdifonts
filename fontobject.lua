@@ -94,6 +94,17 @@ local function CreateRegionData(settings)
 
     return data
 end
+local function CreateClipData(settings)
+    if settings.clip ~= nil and #settings.clip == 2 then
+        local clip_start = settings.clip[1] - 1;
+        local clip_data = ffi.new('GdiCharRange_t', {
+            clip_start,
+            settings.clip[2] - clip_start,
+        });
+        return clip_data;
+    end
+    return nil;
+end
 
 local function Error(text)
     local stripped = string.gsub(text, '$H', ''):gsub('$R', '');
@@ -139,6 +150,7 @@ function object:get_texture()
         local region_data = CreateRegionData(self.settings);
         font_data.Regions = region_data.regions;
         font_data.RegionsLength = region_data.region_count;
+        font_data.ClipRange = CreateClipData(self.settings);
 
         local tx = self.renderer.CreateTexture(self.interface, font_data);
         if (tx.Texture == nil) or (tx.Width == 0) or (tx.Height == 0) then
@@ -349,6 +361,17 @@ end
 function object:set_regions(regions)
     self.is_dirty = true;
     self.settings.regions = regions;
+end
+
+function object:set_clip_range(clip_start, clip_end)
+    self.is_dirty = true;
+    clip_start = clip_start or 0;
+    clip_end = clip_end or 0;
+    if clip_start < 1 or clip_end < 1 then
+        self.settings.clip = nil;
+    else
+        self.settings.clip = { tonumber(clip_start), tonumber(clip_end) };
+    end
 end
 
 return object;

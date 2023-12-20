@@ -47,6 +47,7 @@ ffi.cdef[[
         const char* FontText;
         GdiRegion_t* Regions;
         int32_t RegionsLength;
+        GdiCharRange_t* ClipRange;
     } GdiFontData_t;
     
     typedef struct {
