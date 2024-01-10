@@ -67,7 +67,7 @@ ffi.cdef[[
         IDirect3DTexture8* Texture;
     } GdiFontReturn_t;
 
-    uint32_t* CreateFontManager(IDirect3DDevice8* pDevice);
+    uint32_t* CreateFontManager(IDirect3DDevice8* pDevice, uint32_t pLogManager);
     void DestroyFontManager(uint32_t* pManager);
     GdiFontReturn_t CreateTexture(uint32_t* pManager, GdiFontData_t* data);
     GdiFontReturn_t CreateRectTexture(uint32_t* pManager, GdiRectData_t* data);
@@ -76,7 +76,7 @@ ffi.cdef[[
     void DisableTextureDump(uint32_t* pManager);
 ]]
 
-local interface = renderer.CreateFontManager(d3d.get_device());
+local interface = renderer.CreateFontManager(d3d.get_device(), 0);
 local objects = T{};
 
 -- Render stuff..
